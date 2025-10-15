@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { UserNav } from "@/components/auth/UserNav";
 
 const navLinks = [
   { href: "/body", label: "Body" },
@@ -20,23 +21,26 @@ export function Header() {
         <Link href="/" className="font-headline text-2xl font-bold">
           Re-membering (MS)
         </Link>
-        <nav className="hidden md:flex items-center space-x-2">
-          {navLinks.map((link) => (
-            <Button
-              key={link.href}
-              asChild
-              variant={pathname === link.href ? "secondary" : "ghost"}
-              className={cn(
-                "transition-colors",
-                pathname === link.href
-                  ? ""
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              <Link href={link.href}>{link.label}</Link>
-            </Button>
-          ))}
-        </nav>
+        <div className="flex items-center space-x-2">
+            <nav className="hidden md:flex items-center space-x-2">
+            {navLinks.map((link) => (
+                <Button
+                key={link.href}
+                asChild
+                variant={pathname === link.href ? "secondary" : "ghost"}
+                className={cn(
+                    "transition-colors",
+                    pathname === link.href
+                    ? ""
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                >
+                <Link href={link.href}>{link.label}</Link>
+                </Button>
+            ))}
+            </nav>
+            <UserNav />
+        </div>
         {/* Mobile menu could be added here */}
       </div>
     </header>
