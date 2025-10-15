@@ -1,0 +1,120 @@
+/**
+ * @fileoverview Firestore Security Rules for Re-membering (MS) application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model. Each user has full
+ * control over their own data, and no user can access another user's data
+ * without explicit shared access mechanisms (which are not defined in this data model).
+ *
+ * Data Structure:
+ * The data is organized hierarchically under `/users/{userId}`, where `{userId}`
+ * corresponds to the Firebase Authentication UID. Each user's data is further
+ * divided into `bodyStories` and `memoryLocations` subcollections.
+ *
+ * Key Security Decisions:
+ * - Users can only read and write their own user document.
+ * - Users can only read and write their own bodyStories.
+ * - Users can only read and write their own memoryLocations.
+ * - Listing other user's data is not allowed.
+ *
+ * Denormalization for Authorization:
+ *  The rules rely on path-based ownership, where the `userId` in the path
+ *  must match the authenticated user's UID. This avoids the need for extra
+ *  `get()` calls to verify ownership.
+ *
+ * Structural Segregation:
+ *  The data model utilizes user-specific subcollections to keep private and
+ *  public data separate.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Secure access to user profiles. Only the authenticated user can read/write their own profile.
+     * @path /users/{userId}
+     * @allow (create) User with UID 'user123' can create their profile if request.auth.uid == 'user123'.
+     * @allow (get, update, delete) User with UID 'user123' can get, update, and delete their profile if request.auth.uid == 'user123'.
+     * @deny (create, get, update, delete) User with UID 'user456' cannot access profile data at /users/{userId} where userId == 'user123'.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secure access to bodyStories. Only the authenticated user can read/write their own bodyStories.
+     * @path /users/{userId}/bodyStories/{bodyStoryId}
+     * @allow (create) User with UID 'user123' can create a bodyStory under /users/user123/bodyStories/story1 if request.auth.uid == 'user123'.
+     * @allow (get, update, delete) User with UID 'user123' can get, update, and delete their bodyStory under /users/user123/bodyStories/story1 if request.auth.uid == 'user123'.
+     * @deny (create, get, update, delete) User with UID 'user456' cannot access bodyStory data under /users/user123/bodyStories/story1.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/bodyStories/{bodyStoryId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secure access to memoryLocations. Only the authenticated user can read/write their own memoryLocations.
+     * @path /users/{userId}/memoryLocations/{memoryLocationId}
+     * @allow (create) User with UID 'user123' can create a memoryLocation under /users/user123/memoryLocations/location1 if request.auth.uid == 'user123'.
+     * @allow (get, update, delete) User with UID 'user123' can get, update, and delete their memoryLocation under /users/user123/memoryLocations/location1 if request.auth.uid == 'user123'.
+     * @deny (create, get, update, delete) User with UID 'user456' cannot access memoryLocation data under /users/user123/memoryLocations/location1.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/memoryLocations/{memoryLocationId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}

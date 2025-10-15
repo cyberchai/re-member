@@ -1,0 +1,177 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the Re-membering (MS) application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "googleId": {
+          "type": "string",
+          "description": "The unique identifier from Google for the user."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User's display name."
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "URL of the user's profile photo, obtained from Google.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "googleId",
+        "email",
+        "displayName"
+      ]
+    },
+    "BodyStory": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "BodyStory",
+      "type": "object",
+      "description": "Represents a user's story associated with a body part.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the BodyStory entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N BodyStory)"
+        },
+        "bodyPart": {
+          "type": "string",
+          "description": "The specific body part the story relates to (e.g., 'Heart', 'Brain', 'Legs')."
+        },
+        "storyText": {
+          "type": "string",
+          "description": "The user's written reflection or story about the body part."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "bodyPart",
+        "storyText"
+      ]
+    },
+    "MemoryLocation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MemoryLocation",
+      "type": "object",
+      "description": "Represents a memory or emotional connection geolocated on a map.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MemoryLocation entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N MemoryLocation)"
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Latitude coordinate of the memory location."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Longitude coordinate of the memory location."
+        },
+        "locationName": {
+          "type": "string",
+          "description": "Name or description of the location (e.g., 'Paris', 'Childhood Home')."
+        },
+        "memoryText": {
+          "type": "string",
+          "description": "Short text describing the memory or feeling associated with the location."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "latitude",
+        "longitude",
+        "locationName",
+        "memoryText"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. Uses path-based ownership for private user data. The `userId` parameter corresponds to the Firebase Auth UID, ensuring that only the authenticated user can access their own profile.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Auth UID of the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/bodyStories/{bodyStoryId}",
+        "definition": {
+          "entityName": "BodyStory",
+          "schema": {
+            "$ref": "#/backend/entities/BodyStory"
+          },
+          "description": "Stores body stories created by the user. Uses path-based ownership for private user data. The `userId` parameter corresponds to the Firebase Auth UID, ensuring that only the authenticated user can access their own body stories.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Auth UID of the user."
+            },
+            {
+              "name": "bodyStoryId",
+              "description": "The unique identifier for the body story."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/memoryLocations/{memoryLocationId}",
+        "definition": {
+          "entityName": "MemoryLocation",
+          "schema": {
+            "$ref": "#/backend/entities/MemoryLocation"
+          },
+          "description": "Stores memory locations created by the user. Uses path-based ownership for private user data. The `userId` parameter corresponds to the Firebase Auth UID, ensuring that only the authenticated user can access their own memory locations.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The Firebase Auth UID of the user."
+            },
+            {
+              "name": "memoryLocationId",
+              "description": "The unique identifier for the memory location."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and easily debuggable, following the core design principles and strategy mandates. It leverages path-based ownership for user-specific data, ensuring Authorization Independence and facilitating secure list operations (QAPs). The structure also avoids hierarchical authorization dependencies, making security rules simpler and more robust. The structure is designed for Authentication via google sign-in."
+  }
+}
