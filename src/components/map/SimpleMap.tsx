@@ -12,11 +12,19 @@ export interface MapPin {
   position: [number, number];
   name: string;
   description?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface NewMapPin {
+  position: [number, number];
+  name: string;
+  description?: string;
 }
 
 interface SimpleMapProps {
   pins: MapPin[];
-  onAddPin: (pin: Omit<MapPin, 'id'>) => void;
+  onAddPin: (pin: NewMapPin) => void;
   onRemovePin: (pinId: string) => void;
 }
 
@@ -25,6 +33,7 @@ export default function SimpleMap({ pins, onAddPin, onRemovePin }: SimpleMapProp
   const [newPinPosition, setNewPinPosition] = useState<[number, number] | null>(null);
   const [pinName, setPinName] = useState("");
   const [pinDescription, setPinDescription] = useState("");
+  const [showDialog, setShowDialog] = useState(false);
   const [mapInstance, setMapInstance] = useState<any>(null);
   const [mapKey, setMapKey] = useState(0);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -53,14 +62,6 @@ export default function SimpleMap({ pins, onAddPin, onRemovePin }: SimpleMapProp
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           }).addTo(map);
 
-          // Add click handler
-          map.on('click', (e) => {
-            if (isAddingPin) {
-              const { lat, lng } = e.latlng;
-              setNewPinPosition([lat, lng]);
-            }
-          });
-
           setMapInstance(map);
         }
       } catch (error) {
@@ -78,6 +79,27 @@ export default function SimpleMap({ pins, onAddPin, onRemovePin }: SimpleMapProp
       setMapInstance(null);
     }
   }, [mapKey]);
+
+  // Handle map click events for adding pins
+  useEffect(() => {
+    if (!mapInstance) return;
+
+    const handleMapClick = (e: any) => {
+      if (isAddingPin) {
+        const { lat, lng } = e.latlng;
+        setNewPinPosition([lat, lng]);
+        setShowDialog(true);
+      }
+    };
+
+    mapInstance.on('click', handleMapClick);
+
+    return () => {
+      if (mapInstance) {
+        mapInstance.off('click', handleMapClick);
+      }
+    };
+  }, [mapInstance, isAddingPin]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -141,6 +163,11 @@ export default function SimpleMap({ pins, onAddPin, onRemovePin }: SimpleMapProp
 
   const handleAddPin = () => {
     if (newPinPosition && pinName.trim()) {
+      console.log('SimpleMap: Calling onAddPin with:', {
+        position: newPinPosition,
+        name: pinName.trim(),
+        description: pinDescription.trim() || undefined,
+      });
       onAddPin({
         position: newPinPosition,
         name: pinName.trim(),
@@ -150,6 +177,9 @@ export default function SimpleMap({ pins, onAddPin, onRemovePin }: SimpleMapProp
       setPinName("");
       setPinDescription("");
       setIsAddingPin(false);
+      setShowDialog(false);
+    } else {
+      console.log('SimpleMap: Cannot add pin - missing position or name:', { newPinPosition, pinName: pinName.trim() });
     }
   };
 
@@ -158,6 +188,7 @@ export default function SimpleMap({ pins, onAddPin, onRemovePin }: SimpleMapProp
     setPinName("");
     setPinDescription("");
     setIsAddingPin(false);
+    setShowDialog(false);
   };
 
   const handleRetryMap = () => {
@@ -208,51 +239,6 @@ export default function SimpleMap({ pins, onAddPin, onRemovePin }: SimpleMapProp
             ) : (
               <div className="space-y-3">
                 <p className="text-sm font-medium">Click on the map to place a pin</p>
-                {newPinPosition && (
-                  <Dialog open={true} onOpenChange={handleCancelAddPin}>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Add New Pin</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="text-sm font-medium">Pin Name *</label>
-                          <Input
-                            value={pinName}
-                            onChange={(e) => setPinName(e.target.value)}
-                            placeholder="Enter pin name..."
-                            className="mt-1"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-sm font-medium">Description (optional)</label>
-                          <Input
-                            value={pinDescription}
-                            onChange={(e) => setPinDescription(e.target.value)}
-                            placeholder="Enter description..."
-                            className="mt-1"
-                          />
-                        </div>
-                        <div className="flex space-x-2">
-                          <Button
-                            onClick={handleAddPin}
-                            disabled={!pinName.trim()}
-                            className="flex-1"
-                          >
-                            Add Pin
-                          </Button>
-                          <Button
-                            variant="outline"
-                            onClick={handleCancelAddPin}
-                            className="flex-1"
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                )}
                 <Button
                   variant="outline"
                   onClick={handleCancelAddPin}
@@ -265,6 +251,51 @@ export default function SimpleMap({ pins, onAddPin, onRemovePin }: SimpleMapProp
           </CardContent>
         </Card>
       </div>
+
+      {/* Pin Dialog - rendered outside conditional to ensure proper control */}
+      <Dialog open={showDialog} onOpenChange={handleCancelAddPin}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Pin</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Pin Name *</label>
+              <Input
+                value={pinName}
+                onChange={(e) => setPinName(e.target.value)}
+                placeholder="Enter pin name..."
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">Description (optional)</label>
+              <Input
+                value={pinDescription}
+                onChange={(e) => setPinDescription(e.target.value)}
+                placeholder="Enter description..."
+                className="mt-1"
+              />
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                onClick={handleAddPin}
+                disabled={!pinName.trim()}
+                className="flex-1"
+              >
+                Add Pin
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleCancelAddPin}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

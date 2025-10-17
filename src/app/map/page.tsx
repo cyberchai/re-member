@@ -5,40 +5,27 @@ import MainLayout from "@/components/layouts/MainLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin } from "@/components/map/SimpleMap";
 import MapWrapper from "@/components/map/MapWrapper";
+import { useMapPins, NewMapPin } from "@/hooks/use-map-pins";
 
 export default function MapPage() {
-  const [pins, setPins] = useState<MapPin[]>([
-    // Example pins to start with
-    {
-      id: "1",
-      position: [40.7128, -74.0060],
-      name: "New York City",
-      description: "Where I first fell in love with the city"
-    },
-    {
-      id: "2", 
-      position: [51.5074, -0.1278],
-      name: "London",
-      description: "My favorite place to visit"
-    },
-    {
-      id: "3",
-      position: [35.6762, 139.6503],
-      name: "Tokyo",
-      description: "Amazing food and culture"
-    }
-  ]);
+  const { pins, isLoading, error, addPin, removePin } = useMapPins();
 
-  const handleAddPin = (newPin: Omit<MapPin, 'id'>) => {
-    const pin: MapPin = {
-      ...newPin,
-      id: Date.now().toString(), // Simple ID generation
-    };
-    setPins(prev => [...prev, pin]);
+  const handleAddPin = async (newPin: NewMapPin) => {
+    try {
+      console.log('Map page: Attempting to add pin:', newPin);
+      await addPin(newPin);
+      console.log('Map page: Pin added successfully');
+    } catch (error) {
+      console.error('Map page: Failed to add pin:', error);
+    }
   };
 
-  const handleRemovePin = (pinId: string) => {
-    setPins(prev => prev.filter(pin => pin.id !== pinId));
+  const handleRemovePin = async (pinId: string) => {
+    try {
+      await removePin(pinId);
+    } catch (error) {
+      console.error('Failed to remove pin:', error);
+    }
   };
 
   return (

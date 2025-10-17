@@ -9,15 +9,16 @@ import {
   signOut,
   // Assume getAuth and app are initialized elsewhere
 } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
 
 /** Initiate Google sign-in (non-blocking). */
 export function initiateGoogleSignIn(authInstance: Auth): void {
   const provider = new GoogleAuthProvider();
-  const router = useRouter();
   // CRITICAL: Call signInWithPopup directly. Do NOT use 'await'.
   signInWithPopup(authInstance, provider).then(() => {
-    router.push('/');
+    // Use window.location for navigation in utility functions
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
   });
   // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }
@@ -45,10 +46,12 @@ export function initiateEmailSignIn(authInstance: Auth, email: string, password:
 
 /** Initiate sign-out (non-blocking). */
 export function initiateSignOut(authInstance: Auth): void {
-  const router = useRouter();
   // CRITICAL: Call signOut directly. Do NOT use 'await'.
   signOut(authInstance).then(() => {
-    router.push('/login');
+    // Use window.location for navigation in utility functions
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
   });
   // Code continues immediately. Auth state change is handled by onAuthStateChanged listener.
 }

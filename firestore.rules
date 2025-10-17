@@ -116,5 +116,34 @@ service cloud.firestore {
       allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
       allow delete: if isExistingOwner(userId);
     }
+
+    /**
+     * @description Secure access to mapPins. Only the authenticated user can read/write their own mapPins.
+     * @path /users/{userId}/mapPins/{mapPinId}
+     * @allow (create) User with UID 'user123' can create a mapPin under /users/user123/mapPins/pin1 if request.auth.uid == 'user123'.
+     * @allow (get, update, delete) User with UID 'user123' can get, update, and delete their mapPin under /users/user123/mapPins/pin1 if request.auth.uid == 'user123'.
+     * @deny (create, get, update, delete) User with UID 'user456' cannot access mapPin data under /users/user123/mapPins/pin1.
+     * @principle Enforces document ownership for writes.
+     */
+    match /users/{userId}/mapPins/{mapPinId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
+    }
   }
 }
