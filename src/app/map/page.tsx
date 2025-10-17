@@ -1,13 +1,45 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
 import MainLayout from "@/components/layouts/MainLayout";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin } from "lucide-react";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import { MapPin } from "@/components/map/SimpleMap";
+import MapWrapper from "@/components/map/MapWrapper";
 
 export default function MapPage() {
-  const mapImage = PlaceHolderImages.find(img => img.id === 'world-map');
+  const [pins, setPins] = useState<MapPin[]>([
+    // Example pins to start with
+    {
+      id: "1",
+      position: [40.7128, -74.0060],
+      name: "New York City",
+      description: "Where I first fell in love with the city"
+    },
+    {
+      id: "2", 
+      position: [51.5074, -0.1278],
+      name: "London",
+      description: "My favorite place to visit"
+    },
+    {
+      id: "3",
+      position: [35.6762, 139.6503],
+      name: "Tokyo",
+      description: "Amazing food and culture"
+    }
+  ]);
+
+  const handleAddPin = (newPin: Omit<MapPin, 'id'>) => {
+    const pin: MapPin = {
+      ...newPin,
+      id: Date.now().toString(), // Simple ID generation
+    };
+    setPins(prev => [...prev, pin]);
+  };
+
+  const handleRemovePin = (pinId: string) => {
+    setPins(prev => prev.filter(pin => pin.id !== pinId));
+  };
 
   return (
     <MainLayout>
@@ -17,42 +49,45 @@ export default function MapPage() {
           <p className="text-xl text-muted-foreground">Where is your heart connected?</p>
         </div>
 
-        <Card className="max-w-2xl mx-auto mb-8 shadow-lg">
+        <Card className="max-w-4xl mx-auto mb-8 shadow-lg">
           <CardHeader>
-            <CardTitle>Pin a Memory</CardTitle>
+            <CardTitle>Interactive Memory Map</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex w-full items-center space-x-2">
-              <Input type="text" placeholder="Enter a city, state, or country..." />
-              <Button type="submit" variant="default">View Map</Button>
-            </div>
+            <p className="text-muted-foreground mb-4">
+              Click "Add Pin" and then click anywhere on the map to place a memory marker. 
+              You can name your pins and add descriptions to remember special places.
+            </p>
+            <MapWrapper 
+              pins={pins}
+              onAddPin={handleAddPin}
+              onRemovePin={handleRemovePin}
+            />
           </CardContent>
         </Card>
 
-        <Card className="overflow-hidden">
-          <CardContent className="p-0 relative">
-            {mapImage && (
-              <Image
-                src={mapImage.imageUrl}
-                alt={mapImage.description}
-                width={1200}
-                height={800}
-                className="w-full h-auto object-cover"
-                data-ai-hint={mapImage.imageHint}
-              />
-            )}
-            {/* Example Pins */}
-            <div className="absolute top-[30%] left-[20%]">
-              <MapPin className="h-8 w-8 text-accent drop-shadow-lg animate-pulse" />
-            </div>
-            <div className="absolute top-[50%] left-[55%]">
-              <MapPin className="h-8 w-8 text-accent drop-shadow-lg animate-pulse" style={{animationDelay: '0.5s'}} />
-            </div>
-            <div className="absolute top-[65%] left-[80%]">
-              <MapPin className="h-8 w-8 text-accent drop-shadow-lg animate-pulse" style={{animationDelay: '1s'}} />
-            </div>
-          </CardContent>
-        </Card>
+        {pins.length > 0 && (
+          <Card className="max-w-4xl mx-auto">
+            <CardHeader>
+              <CardTitle>Your Memory Pins ({pins.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pins.map((pin) => (
+                  <div key={pin.id} className="p-4 border rounded-lg">
+                    <h3 className="font-semibold">{pin.name}</h3>
+                    {pin.description && (
+                      <p className="text-sm text-muted-foreground mt-1">{pin.description}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {pin.position[0].toFixed(4)}, {pin.position[1].toFixed(4)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </MainLayout>
   );
