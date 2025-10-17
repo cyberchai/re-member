@@ -9,7 +9,7 @@ import {
   HelpCircle,
   Footprints,
   Lungs,
-  Mouth,
+  Speech,
   Sparkles,
   Wind,
 } from "lucide-react";
@@ -30,7 +30,7 @@ export const bodyParts: BodyPart[] = [
   { name: "Eyes", category: "External", icon: Eye },
   { name: "Nose", category: "External", icon: BodyPlaceholderIcon },
   { name: "Ears", category: "External", icon: Ear },
-  { name: "Mouth", category: "External", icon: Mouth },
+  { name: "Mouth", category: "External", icon: Speech },
   { name: "Neck", category: "External", icon: BodyPlaceholderIcon },
   { name: "Chest", category: "External", icon: BodyPlaceholderIcon },
   { name: "Arms", category: "External", icon: BodyPlaceholderIcon },
